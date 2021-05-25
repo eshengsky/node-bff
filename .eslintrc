@@ -1,0 +1,8 @@
+{
+    "extends": ["@nuxtjs/eslint-config-typescript"],
+    "rules": {
+        "semi": [2, "always"],
+        "no-console": 0,
+        "vue/singleline-html-element-content-newline": 0
+    }
+}
