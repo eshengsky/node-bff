@@ -6,6 +6,8 @@
 
 要快速开始，请进入 `node-bff-ui` 和 `node-bff-service` 目录参照说明安装及启动项目。
 
+核心流程已经开发完毕，但还有部分其它功能待开发，欢迎提交PR。
+
 ### 预览
 * 接口列表
 ![image](./assets/preview-list.png)
