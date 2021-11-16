@@ -2,7 +2,7 @@
   <div class="online-test">
     <template v-if="api">
       <div class="input-wrap">
-        <a class="input-api" :href="`/api/${api._id}`" target="_blank">
+        <a class="input-api" @click="goApiDetail">
           <el-tag class="method-tag" :type="getMethodType(api.method)">{{ api.method.toUpperCase() }}</el-tag><span class="path">{{ api.path }}</span>
         </a>
         <div class="btn-wrap">
@@ -166,6 +166,10 @@ export default vue.extend({
     Splitpanes,
     Pane
   },
+  props: {
+    debuggerApi: Object,
+    default: {}
+  },
   data () {
     return {
       searchVisible: false,
@@ -236,15 +240,24 @@ export default vue.extend({
   },
   async mounted () {
     const thread = this.$route.query.thread as string | null;
-    if (!thread) {
-      this.api = null;
-    } else {
+    if (this?.debuggerApi?.name) {
+      this.api = JSON.parse(JSON.stringify(this.debuggerApi));
+      this.initParams();
+    } else if (thread) {
       try {
         const { data } = await this.getApiByThread(thread);
         this.api = data;
         this.initParams();
       } catch (err) {
         console.error(err);
+      }
+    }
+  },
+  watch: {
+    debuggerApi: {
+      deep: true,
+      handler () {
+        this.api = JSON.parse(JSON.stringify(this.debuggerApi));
       }
     }
   },
@@ -413,8 +426,10 @@ export default vue.extend({
       // 当页面没有刷新时，测试中的接口可能已经发生了变更，所以每次都要重新获取api
       // 但获取api不计算响应时长
       try {
-        const { data } = await this.getApiByThread(this.$route.query.thread as string);
-        this.api = data;
+        if (this.$route.query.thread) {
+          const { data } = await this.getApiByThread(this.$route.query.thread as string);
+          this.api = data;
+        }
       } catch (err) {
         console.error(err);
         this.$message.error('获取接口详情失败！');
@@ -425,7 +440,9 @@ export default vue.extend({
         return;
       }
       this.sending = true;
-      const markers = (this.$refs.editor as any).getMonaco().editor.getModelMarkers({});
+
+      // 过滤特定编辑器实例的markers
+      const markers = (this.$refs.editor as any).getMarkers();
       const errors: any[] = [];
       if (markers && markers.length) {
         // 只关注警告和错误的marker
@@ -438,6 +455,7 @@ export default vue.extend({
       if (errors.length) {
         console.log('错误列表：', errors);
         this.$message.error('JSON格式不正确，请检查并修改！');
+        this.sending = false;
         return;
       }
 
@@ -479,6 +497,12 @@ export default vue.extend({
       this.logs = logs || [];
       this.debugApiData = debugApiData;
       this.sending = false;
+    },
+    goApiDetail (event: Event) {
+      if (this?.api?._id) {
+        window.open(`/api/${this.api._id}`);
+      }
+      event.preventDefault();
     }
   },
   filters: {

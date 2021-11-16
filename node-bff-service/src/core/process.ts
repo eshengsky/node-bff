@@ -384,7 +384,7 @@ export default async (reqObj: any, apiData: IApi, isDebug = false): Promise<IRes
               if (obj.hasErr) {
                 return sendResponse(obj.data);
               }
-              options.url = options.url.replace(/:(\w+)/g, (_a, b) => obj.data[b]);
+              options.url = options.url.replace(/\/:(\w+)/g, (_a, b) => obj.data[b]);
             }
 
             // 构建Body参数

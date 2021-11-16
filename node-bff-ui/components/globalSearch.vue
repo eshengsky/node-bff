@@ -4,9 +4,9 @@
       :show-close="false"
       :visible="value"
       width="50%"
+      :append-to-body="true"
       @opened="onOpend"
-      @close="close"
-    >
+      @close="close">
       <div class="dialog-body">
         <div class="input-wrap">
           <i class="icon-search el-icon-search" />

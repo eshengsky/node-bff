@@ -173,7 +173,7 @@ export default vue.extend({
     },
     confirm () {
       // 检查是否存在语法错误
-      const markers = (this.$refs.editor as any).getMonaco().editor.getModelMarkers({});
+      const markers = (this.$refs.editor as any).getMarkers();
       const errors: any[] = [];
       if (markers && markers.length) {
         // 只关注警告和错误的marker

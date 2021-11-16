@@ -86,9 +86,12 @@
         <flow-chart :api-data="apiData" />
       </div>
       <div class="action-bar">
-        <el-button plain style="margin-right: 10px;" @click="goBack">返回</el-button>
-        <el-button type="primary" :style="{ margin: '200px 0' }" @click="showSaveConfirm">
+        <el-button plain @click="goBack">返回</el-button>
+        <el-button type="primary" :style="{ margin: '200px 10px' }" @click="showSaveConfirm">
           保存更改
+        </el-button>
+        <el-button type="warning" :style="{ margin: '200px 0' }" :loading="debugLoading" @click="onDebug">
+          立即调试
         </el-button>
       </div>
     </el-form>
@@ -123,17 +126,30 @@
         </el-tab-pane>
       </el-tabs>
     </div>
+    <el-drawer
+      :with-header="false"
+      :visible.sync="showDebuggerDrawer"
+      :append-to-body="true"
+      size="90%">
+      <div style="padding: 20px;">
+        <onlineTest :debuggerApi="apiDataClone"></onlineTest>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script lang="ts">
 import vue, { PropOptions } from 'vue';
 import { Form } from 'element-ui';
+import onlineTest from '../pages/online-test.vue';
 import { headerAutoList, httpMethods, respFnKey, verifyKey } from '~/common/variables';
 import { EnumStatus, EnumBodyType, EnumParamType } from '~/types/enum';
 import { IApi } from '~/types/index';
 export default vue.extend({
   name: 'ApiAddOrEdit',
+  components: {
+    onlineTest
+  },
   props: {
     apiData: {
       type: Object,
@@ -229,7 +245,10 @@ export default vue.extend({
       saveModal: false,
       categories: [],
       saveModalTab: 'version',
-      saving: false
+      saving: false,
+      debugLoading: false,
+      showDebuggerDrawer: false,
+      apiDataClone: {}
     };
   },
   computed: {
@@ -274,6 +293,24 @@ export default vue.extend({
       const content = (this.$refs.mdEditor as any).invoke('getMarkdown');
       this.apiData.versionMessage = content;
     },
+    onDebug () {
+      const form = this.$refs.form as Form;
+      form.validate(async (valid) => {
+        if (valid) {
+          this.debugLoading = true;
+          const { code, data, message } = await this.$axios.$post('/getDebugApi', this.apiData);
+          if (code === 1 && data) {
+            this.apiDataClone = data;
+            this.showDebuggerDrawer = true;
+          } else {
+            this.$message.error(message || '出错了~');
+          }
+          this.debugLoading = false;
+        } else {
+          this.$message.error('表单信息不完整或格式错误');
+        }
+      });
+    },
     saveData () {
       const saveform = this.$refs.saveform as Form;
       saveform.validate(async (valid) => {
@@ -316,6 +353,7 @@ export default vue.extend({
   padding: 15px 15px 0;
 }
 .common-block {
+  position: relative;
   margin-bottom: 30px;
   h2 {
     font-size: 18px;

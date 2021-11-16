@@ -132,7 +132,7 @@ export default vue.extend({
       if (this.handlerClone.custom) {
         // FIXME:这里有个Bug：语法检查是需要时间的，如果检查结束之前就点击了确定，就有问题，待修复
         // 检查是否存在语法错误
-        const markers = (this.$refs.editor as any).getMonaco().editor.getModelMarkers({});
+        const markers = (this.$refs.editor as any).getMarkers();
         const errors: any[] = [];
         if (markers && markers.length) {
           // 只关注警告和错误的marker
