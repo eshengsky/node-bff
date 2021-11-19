@@ -61,7 +61,7 @@
 import vue, { PropOptions } from 'vue';
 import { IHandler, IApi, IService, IServiceGroup } from '~/types/index';
 import { EnumBodyType } from '~/types/enum';
-import { respFnKey, defaultJsonFn } from '~/common/variables';
+import { respFnKey } from '~/common/variables';
 import { getHandlerServicesName } from '~/common/utils';
 export default vue.extend({
   name: 'FlowChart',
@@ -103,8 +103,7 @@ export default vue.extend({
         pathParams: [],
         urlParams: [],
         bodyType: EnumBodyType.none,
-        jsonSource: defaultJsonFn,
-        jsonSourceCompiled: '',
+        jsonParams: [],
         formParams: [],
         headerParams: [],
         comment: ''

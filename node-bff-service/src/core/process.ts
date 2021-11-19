@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import Joi from 'joi';
 import {
-  IApi, ICommonParam, IHandler, IJsonParam, IService, IServiceGroup, IServiceParam,
+  IApi, ICommonParam, IHandler, IJsonParam, IService, IServiceGroup, IServiceParam, IServiceParamJson
 } from '../types';
 import { IResp } from '../types/response';
 import { ILog } from '../types/log';
@@ -173,6 +173,42 @@ function generateJoiJsonSchema(paramNode: IJsonParam) {
     }
     default:
       return Joi.object().unknown();
+  }
+}
+
+// 生成body参数json类型的请求数据
+function generateJsonParams(configData: IServiceParamJson[], context: any) {
+  function walk(children: IServiceParamJson[], context: any, type: string) {
+    if(!children || children.length === 0) {
+      return []
+    }
+    const result: any = type === 'obj' ? {} : []
+    children.forEach(child => {
+      let value 
+      switch (child.type) {
+        case 'object':
+          value = walk(child.children, context, 'obj')
+          break;
+        case 'array':
+          value = walk(child.children, context, 'arr')
+          break;
+        case 'expression':
+          const fn = new Function('context', `return ${child.paramValue}`)
+          value = fn(context)
+          break;
+        default:
+          value = child.paramValue
+        }
+        if(type === 'obj') {
+          (result as any)[child.paramName] = value
+        } else {
+          result.push(value)
+        }
+    })
+    return result
+  }
+  if(configData && configData.length > 0) {
+    return walk(configData[0].children, context, 'obj')
   }
 }
 
@@ -398,8 +434,7 @@ export default async (reqObj: any, apiData: IApi, isDebug = false): Promise<IRes
               }
             } else if (service.bodyType === EnumBodyType.json) {
               try {
-                const fn = new Function('context', 'console', service.jsonSourceCompiled);
-                options.data = fn(context, myConsole);
+                options.data = generateJsonParams(service.jsonParams, context)
               } catch (err) {
                 console.error(`${hsName} - ${service.no} Body函数执行出错！`, err);
                 return {

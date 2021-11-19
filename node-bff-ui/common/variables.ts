@@ -88,10 +88,6 @@ export const defaultRespFn = `export default function (context: IContext): IResp
     }
   }
 }`;
-export const defaultJsonFn = `export default function (context: IContext): IJson {
-  // 返回值需要能转换为JSON
-  return {};
-}`;
 // common handler 正则
 // 作用是当修改了函数的外层定义后，自动撤销代码，以保护代码结构
 export const commonFnReg = /^export default function \(context: IContext\): IResp \| void {[\r\n][\s\S]*}$/m;

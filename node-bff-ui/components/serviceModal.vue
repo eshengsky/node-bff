@@ -1,7 +1,7 @@
 <template>
   <el-drawer
     ref="drawer"
-    size="40%"
+    size="60%"
     :with-header="false"
     :visible="value"
     :before-close="beforeClose"
@@ -69,14 +69,7 @@
                 <div v-show="serviceClone.bodyType === EnumBodyType.none" class="body-none">
                   该接口不需要Body参数
                 </div>
-                <code-editor
-                  v-show="serviceClone.bodyType === EnumBodyType.json"
-                  ref="editor"
-                  language="typescript"
-                  :value="serviceClone.jsonSource"
-                  class="editor-container"
-                  @editorDidMount="editorDidMount"
-                />
+                <service-params-json v-show="serviceClone.bodyType === EnumBodyType.json" :params-list="serviceClone.jsonParams" />
                 <service-params v-show="serviceClone.bodyType === EnumBodyType.formData" :params-list="serviceClone.formParams" style="margin-top: -15px;" />
               </el-tab-pane>
               <el-tab-pane name="header" class="tab-panel">
@@ -111,7 +104,6 @@
 <script lang="ts">
 import vue, { PropOptions } from 'vue';
 import { headerAutoList, httpMethods } from '~/common/variables';
-import { generateDefinition } from '~/common/utils';
 import { IApi, IService } from '~/types';
 import { EnumBodyType, EnumParamType } from '~/types/enum';
 export default vue.extend({
@@ -146,48 +138,7 @@ export default vue.extend({
     }
   },
   methods: {
-    addTypeDefinition () {
-      const libSource = generateDefinition(this.apiData, 0);
-      this.codeDisposeEvent = (this.$refs.editor as any).monaco.languages.typescript.typescriptDefaults.addExtraLib(libSource);
-    },
-    editorDidMount (editor: any) {
-      const model = editor.getModel();
-      const doUndo = () => Promise.resolve().then(() => {
-        model.undo();
-      });
-
-      // 监听代码改动
-      model.onDidChangeContent(({ isUndoing }: { isUndoing: boolean }) => {
-        if (!isUndoing) {
-          const value: string = model.getValue();
-          const matched = value.match(/^export default function \(context: IContext\): IJson {[\r\n][\s\S]*}$/m);
-          if (matched && matched[0] === value) {
-            // 代码符合正则，且匹配项就是完整的代码，说明代码外层没有被修改
-            this.serviceClone.jsonSource = value;
-          } else {
-            console.log('=== Undo ===', matched, value);
-            doUndo();
-          }
-        }
-      });
-    },
     confirm () {
-      // 检查是否存在语法错误
-      const markers = (this.$refs.editor as any).getMarkers();
-      const errors: any[] = [];
-      if (markers && markers.length) {
-        // 只关注警告和错误的marker
-        markers.forEach((marker: any) => {
-          if (marker.severity === 4 || marker.severity === 8) {
-            errors.push(markers);
-          }
-        });
-      }
-      if (errors.length) {
-        console.log('错误列表：', errors);
-        this.$message.error('代码存在错误或警告，请检查并修改！');
-        return;
-      }
       this.serviceOrigin = this.serviceClone;
       (this.$refs.drawer as any).closeDrawer();
       this.$emit('updateService', this.serviceClone);
@@ -242,10 +193,9 @@ export default vue.extend({
       if (val) {
         this.serviceOrigin = JSON.parse(JSON.stringify(this.service));
         this.serviceClone = JSON.parse(JSON.stringify(this.service));
-        setTimeout(() => {
-          // 抽屉弹出后，才加载ts类型定义
-          this.addTypeDefinition();
-        });
+        if (!this.serviceClone.jsonParams) {
+          this.serviceClone.jsonParams = [];
+        }
       }
     }
   }

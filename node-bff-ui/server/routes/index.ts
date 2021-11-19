@@ -92,25 +92,6 @@ function compileFunctions (api: IApi): string | void {
           return `${handlerTitle} 编译失败：${getErrMsg(err.message)}`;
         }
       }
-    } else if (current.type === 'services' && current.services.length) {
-      const groupTitle = getHandlerServicesName(current, api);
-      for (let j = 0; j < current.services.length; j++) {
-        const service = current.services[j];
-        if (service.bodyType === EnumBodyType.json) {
-          const code = getFuncBody(service.jsonSource);
-          try {
-            const result = transformSync(code, compileOptions);
-            if (result && result.code) {
-              service.jsonSourceCompiled = result.code;
-            } else {
-              return `${groupTitle} - ${service.no} 的Body函数编译失败`;
-            }
-          } catch (err) {
-            console.error(`${groupTitle} - ${service.no} 的Body函数编译失败`, err);
-            return `${groupTitle} - ${service.no} 的Body函数编译失败：${getErrMsg(err.message)}`;
-          }
-        }
-      }
     }
   }
 }
