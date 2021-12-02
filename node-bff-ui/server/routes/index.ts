@@ -92,25 +92,6 @@ function compileFunctions (api: IApi): string | void {
           return `${handlerTitle} 编译失败：${getErrMsg(err.message)}`;
         }
       }
-    } else if (current.type === 'services' && current.services.length) {
-      const groupTitle = getHandlerServicesName(current, api);
-      for (let j = 0; j < current.services.length; j++) {
-        const service = current.services[j];
-        if (service.bodyType === EnumBodyType.json) {
-          const code = getFuncBody(service.jsonSource);
-          try {
-            const result = transformSync(code, compileOptions);
-            if (result && result.code) {
-              service.jsonSourceCompiled = result.code;
-            } else {
-              return `${groupTitle} - ${service.no} 的Body函数编译失败`;
-            }
-          } catch (err) {
-            console.error(`${groupTitle} - ${service.no} 的Body函数编译失败`, err);
-            return `${groupTitle} - ${service.no} 的Body函数编译失败：${getErrMsg(err.message)}`;
-          }
-        }
-      }
     }
   }
 }
@@ -310,6 +291,43 @@ router.get('/latestApi', async (req, res) => {
     res.json({
       code: 1,
       data
+    });
+  } catch (err) {
+    console.error(err);
+    res.json({
+      code: -1,
+      message: '网络错误，请稍后重试',
+      debugMessage: err.message
+    });
+  };
+});
+
+/** 实时调试api数据生成 */
+router.post('/getDebugApi', (req, res) => {
+  // 处理一下source字段
+  fixHandlers(req.body);
+
+  // 先编译所有的handler和接口中的JSON函数
+  const errMsg = compileFunctions(req.body);
+  if (errMsg) {
+    res.json({
+      code: -1,
+      message: errMsg
+    });
+    return;
+  }
+
+  try {
+    const doc: IApi = {
+      ...req.body,
+      createdTime: new Date()
+    };
+    if (req.body.category === 'default') {
+      doc.category = null;
+    }
+    res.json({
+      code: 1,
+      data: doc
     });
   } catch (err) {
     console.error(err);

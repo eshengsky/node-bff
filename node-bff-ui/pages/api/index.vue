@@ -107,7 +107,7 @@
             <el-link class="action-link" :underline="false" @click="showVersionModal(scope.row)">
               <font-icon :icon="['fas', 'history']" />版本管理
             </el-link>
-            <el-link class="action-link" :underline="false" @click="redirectTo(`/online-test?id=${scope.row._id}`)">
+            <el-link class="action-link" :underline="false" @click="redirectTo(`/online-test?thread=${scope.row.versionThread}`)">
               <font-icon :icon="['fas', 'flask']" />API测试
             </el-link>
           </template>

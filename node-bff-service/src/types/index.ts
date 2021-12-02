@@ -64,6 +64,26 @@ export interface IServiceParam {
   valType: 'fixed' | 'expression'
 }
 
+export interface IServiceParamJson {
+  /** 唯一键，仅用作前端定位 */
+  key: number;
+
+  /** 父节点的key值 */
+  parentKey: number;
+
+  /** 参数名 */
+  paramName: string;
+
+  /** 参数值 */
+  paramValue: string | boolean;
+
+  /** 值类型，固定值或者表达式或者对象 */
+  type: 'boolean' | 'array' | 'object' | 'fixed' | 'expression';
+
+  /** 值类型为对象时，孩子节点 */
+  children?: IServiceParamJson[] | null
+}
+
 export interface IService {
   key: number;
   no: string;
@@ -77,8 +97,7 @@ export interface IService {
   pathParams: IServiceParam[];
   urlParams: IServiceParam[];
   bodyType: EnumBodyType;
-  jsonSource: string;
-  jsonSourceCompiled: string;
+  jsonParams: IServiceParamJson[];
   formParams: IServiceParam[];
   headerParams: IServiceParam[];
 

@@ -5,7 +5,7 @@ import cors from 'cors';
 import httpStatus from 'http-status';
 import mainMiddleware from './middlewares/main';
 import apiTestMiddleware from './middlewares/api-test';
-
+import commonApi from './middlewares/commonApi';
 const app = express();
 
 app.use(helmet());
@@ -14,6 +14,9 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(xss());
 app.use(cors());
 // app.options('*', cors());
+
+// 供测试用的api
+app.use('/commonApi', commonApi)
 
 // API在线测试
 app.post('/api-test', apiTestMiddleware);

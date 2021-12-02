@@ -4,6 +4,7 @@
     size="40%"
     :with-header="false"
     :visible="value"
+    :append-to-body="true"
     @close="close"
   >
     <div class="drawer-container">

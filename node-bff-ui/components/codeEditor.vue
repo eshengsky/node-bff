@@ -164,6 +164,11 @@ export default {
 
     focus () {
       this.editor.focus();
+    },
+
+    getMarkers () {
+      const uri = this.editor._modelData.model.uri;
+      return this.monaco.editor.getModelMarkers({ resource: uri });
     }
   },
 

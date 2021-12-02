@@ -1,9 +1,10 @@
 <template>
   <el-drawer
     ref="drawer"
-    size="40%"
+    size="60%"
     :with-header="false"
     :visible="value"
+    :append-to-body="true"
     @close="close"
     @closed="onClosedHandler"
   >
@@ -38,13 +39,7 @@
             <el-alert type="warning" title="警告：GET请求设置Body参数可能无效！" :closable="false" />
           </div>
           <template v-if="serviceClone.bodyType === EnumBodyType.json">
-            <code-editor
-              ref="editor"
-              language="typescript"
-              :value="serviceClone.jsonSource"
-              :readonly="true"
-              class="editor-container"
-            />
+            <service-params-json-view :params-list="serviceClone.jsonParams" />
           </template>
           <template v-else-if="serviceClone.bodyType === EnumBodyType.formData">
             <service-params-view :params-list="serviceClone.formParams" />
@@ -192,9 +187,6 @@ export default vue.extend({
           margin-left: 4px;
         }
       }
-    }
-    .editor-container {
-      height: 300px !important;
     }
   }
   .drawer-footer {
