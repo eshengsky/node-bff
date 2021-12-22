@@ -4,6 +4,7 @@ import { fixHandlers, compileFunctions } from '../shared';
 import { IApi } from '../../types/index';
 import DB from '../db';
 import { setCache, delCache } from '../cache';
+import apiExsit from '../service/apiExsit';
 const { Api } = DB.Models;
 export default async (req: Request, res: Response) => {
   // 处理一下source字段
@@ -41,6 +42,14 @@ export default async (req: Request, res: Response) => {
       versionThread: lastDoc.versionThread,
       createdTime: new Date()
     };
+    // 检查是否与其他接口重复
+    if (await apiExsit(newDoc)) {
+      res.json({
+        code: -1,
+        message: `${newDoc.method} ${newDoc.path} 接口重复`
+      });
+      return;
+    }
     if (req.body.category === 'default') {
       newDoc.category = null;
     }

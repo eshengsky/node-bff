@@ -18,7 +18,7 @@
         label="参数名"
         width="400"
       >
-        <template slot-scope="{ row }">
+        <template slot-scope="{ row, $index }">
           <template v-if="isInputDisabled(row)">
             <span class="field-muted">{{ row.paramName }}</span>
             <!-- root节点的提示 -->
@@ -26,13 +26,16 @@
             <!-- item节点的提示 -->
             <font-icon v-else v-title="'表示数组的元素'" class="icon field-muted" :icon="['far', 'question-circle']" />
           </template>
-          <el-input
-            v-else
-            :ref="`paramsInput-${row.key}`"
-            v-model="row.paramName"
-            placeholder="参数名"
-            :style="{ width: 'auto' }"
-          />
+          <el-form v-else :ref="'form' + row.key" :model="row" :rules="rules" style="display: inline-block;">
+            <el-form-item prop="paramName" :rules="rules.paramName">
+              <el-input
+                :ref="`paramsInput-${row.key}`"
+                v-model.trim="row.paramName"
+                placeholder="参数名"
+                :style="{ width: 'auto' }"
+              />
+            </el-form-item>
+          </el-form>
         </template>
       </el-table-column>
       <el-table-column
@@ -118,6 +121,32 @@ export default vue.extend({
         'array'
       ]
     };
+  },
+  computed: {
+    rules () {
+      return {
+        paramName: [
+          { required: true, message: '参数名必填', trigger: 'blur' },
+          {
+            validator: (_rule: any, value: string, callback: any) => {
+              // 参数名称不能重复,遍历参数树，如果有不止一个和‘value’重名的，则说明是重复
+              let count = 0;
+              this.walkTree(this.paramsList[0], (node: any) => {
+                if (node.paramName === value) {
+                  count++;
+                }
+              });
+              if (count > 1) {
+                callback(new Error('参数名不能重复'));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur'
+          }
+        ]
+      };
+    }
   },
   methods: {
     addRootNode () {
@@ -231,6 +260,42 @@ export default vue.extend({
         return true;
       }
       return false;
+    },
+    walkTree (node: any, fn: Function) {
+      if (node) {
+        fn(node);
+        if (node.children) {
+          for (const child of node.children) {
+            this.walkTree(child, fn);
+          }
+        }
+      }
+    },
+    validateAForm (form: any): Promise<boolean> {
+      return new Promise((resolve) => {
+        // const form = this.$refs.form as Form;
+        form.validate((valid: boolean | PromiseLike<boolean>) => { resolve(valid); });
+      });
+    },
+    /** 可能存在多个el-form，所以需要通过遍历参数树，获取所有el-form，然后逐一验证form表单，只要有一个没验证通过，则判定不通过 */
+    async validate (): Promise<boolean> {
+      if (this.paramsList.length === 0) {
+        return true;
+      }
+      const formRefArr: any[] = [];
+      this.walkTree(this.paramsList[0], (node: any) => {
+        const formRef = this.$refs[`form${node.key}`];
+        if (formRef) {
+          formRefArr.push(formRef);
+        }
+      });
+      for (const item of formRefArr) {
+        const result = await this.validateAForm(item);
+        if (!result) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 });

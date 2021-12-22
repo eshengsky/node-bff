@@ -5,6 +5,7 @@ import { fixHandlers, compileFunctions } from '../shared';
 import { IApi } from '../../types/index';
 import DB from '../db';
 import { setCache } from '../cache';
+import apiExsit from '../service/apiExsit';
 const { Api } = DB.Models;
 export default async (req: Request, res: Response) => {
   // 处理一下source字段
@@ -26,6 +27,15 @@ export default async (req: Request, res: Response) => {
       versionThread: new mongoose.Types.ObjectId().toString(),
       createdTime: new Date()
     };
+
+    // 检查是否有重复接口
+    if (await apiExsit(doc)) {
+      res.json({
+        code: -1,
+        message: `${doc.method} ${doc.path} 接口重复`
+      });
+      return;
+    }
     if (req.body.category === 'default') {
       doc.category = null;
     }
