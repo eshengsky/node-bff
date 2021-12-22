@@ -5,81 +5,86 @@
         添加参数
       </el-button>
     </div>
-    <el-table
-      :data="paramsList"
-      border
-      size="medium"
-      empty-text="没有参数"
-    >
-      <el-table-column
-        prop="paramName"
-        label="参数名"
-        width="300"
+    <el-form ref="form" :model="formData" :rules="rules">
+      <el-table
+        :data="formData.paramsList"
+        border
+        size="medium"
+        empty-text="没有参数"
       >
-        <template slot-scope="{ row }">
-          <el-autocomplete
-            v-if="paramsAutocomplete.length"
-            :ref="`paramsInput-${row.key}`"
-            v-model="row.paramName"
-            :fetch-suggestions="querySearch"
-            placeholder="参数名，全部小写"
-            style="width: 100%;"
-          />
-          <el-input
-            v-else
-            :ref="`paramsInput-${row.key}`"
-            v-model="row.paramName"
-            placeholder="参数名"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="必传"
-        width="100"
-      >
-        <template slot-scope="{ row }">
-          <el-switch v-model="row.required" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="remark"
-        label="备注"
-        min-width="200"
-      >
-        <div slot="header">
-          备注<font-icon v-title="'备注将作为注释展示在代码的智能提示中'" class="icon" :icon="['far', 'question-circle']" style="margin-left: 3px;" />
-        </div>
-        <template slot-scope="{ row }">
-          <el-input
-            v-model="row.remark"
-            placeholder="对该参数的额外说明"
-            :auto-size="{ minRows: 1, maxRows: 6 }"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="action"
-        label="操作"
-        width="180"
-      >
-        <template slot-scope="{ row }">
-          <el-button type="text" @click="showAdvanced(row)">高级设置</el-button>
-          <el-divider direction="vertical" />
-          <el-popconfirm
-            title="确定删除该参数吗？"
-            @confirm="delParam(row)"
-          >
-            <el-button slot="reference" type="text">删除</el-button>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+        <el-table-column
+          prop="paramName"
+          label="参数名"
+          width="300"
+        >
+          <template slot-scope="{ row, $index }">
+            <el-form-item :prop="'paramsList.'+ $index + '.paramName'" :rules="rules.paramName">
+              <el-autocomplete
+                v-if="paramsAutocomplete.length"
+                :ref="`paramsInput-${row.key}`"
+                v-model.trim="row.paramName"
+                :fetch-suggestions="querySearch"
+                placeholder="参数名，全部小写"
+                style="width: 100%;"
+              />
+              <el-input
+                v-else
+                :ref="`paramsInput-${row.key}`"
+                v-model.trim="row.paramName"
+                placeholder="参数名"
+              />
+            </el-form-item>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="必传"
+          width="100"
+        >
+          <template slot-scope="{ row }">
+            <el-switch v-model="row.required" />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="remark"
+          label="备注"
+          min-width="200"
+        >
+          <div slot="header">
+            备注<font-icon v-title="'备注将作为注释展示在代码的智能提示中'" class="icon" :icon="['far', 'question-circle']" style="margin-left: 3px;" />
+          </div>
+          <template slot-scope="{ row }">
+            <el-input
+              v-model="row.remark"
+              placeholder="对该参数的额外说明"
+              :auto-size="{ minRows: 1, maxRows: 6 }"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="action"
+          label="操作"
+          width="180"
+        >
+          <template slot-scope="{ row }">
+            <el-button type="text" @click="showAdvanced(row)">高级设置</el-button>
+            <el-divider direction="vertical" />
+            <el-popconfirm
+              title="确定删除该参数吗？"
+              @confirm="delParam(row)"
+            >
+              <el-button slot="reference" type="text">删除</el-button>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-form>
     <advanced-dialog v-model="advancedShow" :param="currentParamObj" />
   </div>
 </template>
 
 <script lang="ts">
 import vue, { PropOptions } from 'vue';
+import { Form } from 'element-ui';
 import { ICommonParam } from '~/types/index';
 import { EnumBodyType } from '~/types/enum';
 export default vue.extend({
@@ -114,6 +119,35 @@ export default vue.extend({
           value: t
         };
       });
+    },
+    rules () {
+      return {
+        paramName: [
+          { required: true, message: '参数名必填', trigger: 'change' },
+          { required: true, message: '参数名必填', trigger: 'blur' },
+          {
+            validator: (_rule: any, value: string, callback: any) => {
+              // 参数名称不能重复
+              const filtered = this.paramsList.filter((param: ICommonParam) => {
+                return param.paramName === value;
+              });
+              if (filtered?.length > 1) {
+                callback(new Error('参数名不能重复'));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur'
+          }
+        ]
+      };
+    },
+
+    // 将参数列表包起来，为了将整个table放在form中，进而用表单校验功能
+    formData () {
+      return {
+        paramsList: this.paramsList || []
+      };
     }
   },
   methods: {
@@ -168,6 +202,12 @@ export default vue.extend({
     showAdvanced (paramObj: any) {
       this.advancedShow = true;
       this.currentParamObj = paramObj;
+    },
+    validate (): Promise<boolean> {
+      return new Promise((resolve) => {
+        const form = this.$refs.form as Form;
+        form.validate((valid) => { resolve(valid); });
+      });
     }
   }
 });

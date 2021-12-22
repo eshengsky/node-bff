@@ -36,7 +36,7 @@
         width="120"
       >
         <template slot-scope="{ row }">
-          <el-select v-model="row.type" @change="onTypeChange($event, row)" :disabled="row.parentKey === 0">
+          <el-select v-model="row.type" @change="onTypeChange($event, row)">
             <el-option key="fixed" value="fixed" label="固定值" />
             <el-option key="expression" value="expression" label="表达式" />
             <el-option key="boolean" value="boolean" label="布尔值" />

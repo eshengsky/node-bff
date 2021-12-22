@@ -46,7 +46,7 @@
           <el-tabs v-model="currentParamTab" type="border-card">
             <el-tab-pane name="url" class="tab-panel">
               <tab-header slot="label" :type="EnumParamType.url" :num="apiData.urlParams.length" />
-              <params-edit :params-list="apiData.urlParams" />
+              <params-edit ref="urlForm" :params-list="apiData.urlParams" />
             </el-tab-pane>
             <el-tab-pane name="body" class="tab-panel">
               <tab-header slot="label" :type="EnumParamType.body" :num="apiData.bodyType === EnumBodyType.none ? 0 : (apiData.bodyType === EnumBodyType.json ? -1 : apiData.formParams.length)" />
@@ -67,13 +67,13 @@
               <div v-show="apiData.bodyType === EnumBodyType.none" class="body-none">
                 该接口不需要Body参数
               </div>
-              <params-json-edit v-show="apiData.bodyType === EnumBodyType.json" :params-list="apiData.jsonParams" />
-              <params-edit v-show="apiData.bodyType === EnumBodyType.formData" :params-list="apiData.formParams" style="margin-top: -15px;" />
+              <params-json-edit v-show="apiData.bodyType === EnumBodyType.json" ref="bodyJsonForm" :params-list="apiData.jsonParams" />
+              <params-edit v-show="apiData.bodyType === EnumBodyType.formData" ref="bodyFormDataForm" :params-list="apiData.formParams" style="margin-top: -15px;" />
             </el-tab-pane>
             <el-tab-pane name="header" class="tab-panel">
               <tab-header slot="label" :type="EnumParamType.header" :num="apiData.headerParams.length" />
               <params-edit
-                ref="headerEdit"
+                ref="headerForm"
                 :params-list="apiData.headerParams"
                 :params-autocomplete="headerAutoList"
               />
@@ -267,12 +267,53 @@ export default vue.extend({
   },
   methods: {
     onBodyTypeChange (val: EnumBodyType) {
-      (this.$refs.headerEdit as any).addContentType(val);
+      (this.$refs.headerForm as any).addContentType(val);
+    },
+    async paramsValidate () {
+      // url参数校验
+      const urlForm = this.$refs.urlForm as any;
+      const urlCheckResult = await urlForm.validate();
+      if (!urlCheckResult) {
+        this.currentParamTab = 'url';
+        return false;
+      }
+
+      // body参数-JSON类型参数校验
+      const bodyJsonForm = this.$refs.bodyJsonForm as any;
+      const bodyJsonCheckResult = await bodyJsonForm.validate();
+      if (!bodyJsonCheckResult) {
+        this.currentParamTab = 'body';
+        this.apiData.bodyType = EnumBodyType.json;
+        return false;
+      }
+      // body参数-formData类型参数校验
+      const bodyFormDataForm = this.$refs.bodyFormDataForm as any;
+      const bodyFormDataCheckResult = await bodyFormDataForm.validate();
+      if (!bodyFormDataCheckResult) {
+        this.currentParamTab = 'body';
+        this.apiData.bodyType = EnumBodyType.formData;
+        return false;
+      }
+
+      // header参数校验
+      const headerForm = this.$refs.headerForm as any;
+      const headerCheckResult = await headerForm.validate();
+      if (!headerCheckResult) {
+        this.currentParamTab = 'header';
+        return false;
+      }
+      return true;
     },
     showSaveConfirm () {
       const form = this.$refs.form as Form;
-      form.validate((valid) => {
+      form.validate(async (valid) => {
         if (valid) {
+          // 参数表单校验
+          const paramsCheckResult = await this.paramsValidate();
+          if (!paramsCheckResult) {
+            this.$message.error('表单信息不完整或格式错误');
+            return;
+          }
           // 继续判断是否存在修改
           if (JSON.stringify(this.apiData, null, 2) === this.apiDataCopyStr) {
             this.$alert('没有检测到更改，无需保存~', '提示', {
